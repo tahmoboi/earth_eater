@@ -1,0 +1,284 @@
+---
+title: "earth_eater"
+author: "Tahmid Hossain Bhuiyan"
+date: "`r Sys.Date()`"
+output: ioslides_presentation
+---
+
+
+## Are we eating away our earth to survive?
+
+**A deepdive on SDG-12**
+
+
+- 8 billion+ people
+- 3 meals a day
+- 1 planet
+
+## Act 1: 1B to 8B in ~ 200 years!
+
+- Acceleration after 1950
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+library(readr)
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(plotly)
+
+# Import global population dataset from Our World in Data
+population <- read_csv('https://ourworldindata.org/grapher/population.csv?v=1&csvType=full&useColumnShortNames=true')
+
+# Clean and prepare dataset:
+# Rename columns for clarity
+# Filter only "World" data to analyze global trends
+# Restrict timeline to post-1800 to highlight modern acceleration
+
+pop<- population %>% rename(country=entity,
+                            population=population_historical) %>% 
+  filter(country=="World",
+         year>1800)
+
+# Create population growth visualization using ggplot.
+
+p1 <- ggplot(pop,
+       aes(x= year,
+           y=population)) +
+  geom_line(linewidth=0.5,
+            color="red") +
+  labs(title = "Humanity’s Growth Has Been Exponential",
+    subtitle = "Global population growth, 1800–2023",
+    y = "Population",
+    x = "Year",
+    caption = "Source: Our World in Data") +
+  
+  # Format y-axis into readable billions/millions
+  scale_y_continuous(labels = scales::label_number(scale_cut = scales::cut_short_scale())) +
+  
+  # Highlight 1950 as structural break (post-WWII growth era)
+  geom_vline(xintercept = 1950,
+             linetype="dashed",
+             color="orange",
+             linewidth=0.7,
+             alpha=0.9)+
+  annotate("text",
+           x=1950,
+           y=2.9e9,
+           label="1950:Population Boom era")+
+  theme_minimal()
+
+# Convert to interactive plot for enhanced engagement
+ggplotly(p1)
+```
+
+
+## Act 2: We Don’t Just Multiply. We Consume More.
+- More People. More Calories. More Pressure
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+library(readr)
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(plotly)
+
+#########################
+# Re-import population dataset to combine with calorie data
+
+population <- read_csv('https://ourworldindata.org/grapher/population.csv?v=1&csvType=full&useColumnShortNames=true')
+
+
+# Data Cleaning
+pop<- population %>% rename(country=entity,
+                            population=population_historical) %>% 
+  filter(country=="World",
+         year>1800)
+
+########################
+# Import per-capita daily calorie supply dataset
+# This captures consumption intensity 
+
+calorie <- read_csv('https://ourworldindata.org/grapher/daily-per-capita-caloric-supply.csv?v=1&csvType=full&useColumnShortNames=true')
+
+cal <- calorie %>% rename(country=entity) %>% 
+  filter(country=="World",
+         year>1800)
+
+# Merge datasets by year
+# inner_join ensures only overlapping years are used 
+
+food_demand<- cal %>% inner_join(pop,
+                                 by="year")
+
+# Total global daily calories = per capita calories × population
+# Divided by 1e12 to express in trillions
+
+food_demand2 <- food_demand %>% 
+  mutate(total_calories_trillions=daily_calories*population/1e12) %>% 
+  select(-c(country.y, code.y)) # Remove redundant columns after join
+
+# Visualize total global food demand
+
+ggplot(food_demand2,
+       aes(x=year,
+           y=total_calories_trillions)) +
+  geom_line(color='orange',
+            alpha=0.6) +
+  labs(title = "Global Food Demand Has Exploded",
+    subtitle = "Total daily calories required worldwide",
+    x = "Year",
+    y = "Trillions of calories per day",
+    caption = "Source: Our World in Data | Population × Daily calorie supply"
+  ) +
+  # Focus x-axis on modern decades where growth accelerates
+  scale_x_continuous(breaks=c(1960,1970,1980,1990,2000,2010,2020)) +
+  theme_minimal()
+```
+
+## Act 3: The Land Responds
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+library(readr)
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+#install.packages('forcats') # Installing forcats package for fct_reorder
+library(forcats)
+
+# Import long-term agricultural land data
+
+agriland <- read_csv('https://ourworldindata.org/grapher/total-agricultural-area-over-the-long-term.csv?v=1&csvType=full&useColumnShortNames=true')
+
+# Select key regions + global aggregate
+countries <- c("World", "Asia", "Europe", "Africa", "North America")
+
+agri <- agriland %>% rename(country=entity,
+                            agriculture_area=agriculture_c) %>%
+  filter(country %in% countries,
+         year>1800) %>% 
+# Reorder factor levels for clearer hierarchy
+  mutate(country=fct_reorder(country, desc(agriculture_area)))
+
+# Area chart with ggplot
+ggplot(agri,
+       aes(x=year,
+           y=agriculture_area,
+           fill=country)) %>% +
+  geom_area(alpha=0.8) +
+  scale_y_continuous(labels=scales::label_number(scale_cut=scales::cut_short_scale()))+
+  scale_x_continuous(expand=c(0,0), # So that the graph starts from 1810 without gap
+                     breaks=c(1810,1850,1900,1950,1990,2020))+
+  labs(
+    title = "To Feed Ourselves, We Reshaped the Planet",
+    subtitle = "Agricultural land over time",
+    x = "Year",
+    y = "Agricultural land (hectares)",
+    caption = "Source: Our World in Data")+
+  theme_minimal()
+```
+
+## Act 3: What We Gained in Farms, We Lost in Forests
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+library(readr)
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+#install.packages('forcats')
+library(forcats)
+library(plotly)
+
+forestland <- read_csv('https://ourworldindata.org/grapher/forest-area-as-share-of-land-area.csv?v=1&csvType=full&useColumnShortNames=true')
+
+forest <- forestland %>% 
+  rename(country=entity) %>% 
+  filter(country=="World",
+         year>1800) %>% 
+  mutate(country=fct_reorder(country, desc(forest_share)))
+
+# Area + line overlay emphasizes long-term downward trend
+f1 <- ggplot(forest,
+       aes(x=year,
+           y=forest_share))+
+  geom_area(fill = "green", alpha = 0.3) +
+  geom_line(color = "#1B5E20", linewidth = 1.2)+
+  labs(title = "Slow but steady forest share decline",
+       subtitle = "Global forest area as share of total land",
+       x = "Year",
+       y = "Forest share(%)",
+       caption = "Source: Our World in Data") +
+  theme_minimal()
+
+ggplotly(f1)
+```
+
+## Act 4: The Atmosphere Answers Back
+
+- Average temperature started rising rapidly.
+- And this has a name called "Global Warming"!
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+library(readr)
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+
+temperature <- read_csv('https://ourworldindata.org/grapher/temperature-anomaly.csv?v=1&csvType=full&useColumnShortNames=true')
+
+# Reshape dataset for multi-line comparison (average, upper, lower bounds)
+# Used pivot longer
+temp <- temperature %>% 
+  rename(country=entity,
+         upper_temp=near_surface_temperature_anomaly_upper,
+         average_temp=near_surface_temperature_anomaly,
+         lower_temp=near_surface_temperature_anomaly_lower) %>% 
+  filter(country=="World") %>% 
+  pivot_longer(cols=c(average_temp,upper_temp,lower_temp),
+               names_to="temp_level",
+               values_to = "temp_degree")
+
+ggplot(temp,
+       aes(x=year,
+           y=temp_degree,
+           color=temp_level))+
+  geom_line()+
+# Mark mid-20th century acceleration period
+  geom_vline(xintercept=1964,
+             linetype="dashed",
+             color="orange")+
+  annotate("text",
+           x=1964,
+           y=-0.1,
+           label="1964:Rapid warming era begins",
+           size=3.4)+
+  scale_color_manual(values = c(
+    "average_temp" = "red",
+    "upper_temp"   = "gray50",
+    "lower_temp"   = "gray50")) +
+  labs(
+    title = "The Bill Comes Due",
+    subtitle = "Global near-surface temperature anomaly, 1850–2023",
+    x = "Year",
+    y = "Temperature anomaly (°C)",
+    caption = "Source: Our World in Data. Temperature anomaly relative to pre-industrial baseline.") +
+  theme_minimal()
+```
+
+## Act 5: So.... what's the answer?
+
+The answer is YES. 
+
+We are eating away our earth to survive.
+
+But is it because we are too many people?
+
+- NO
+
+Then it must be because we humans eat too much?
+
+- Well, NOPE!
+
+Then?
+
+- It is because we don't know "HOW" to eat sustainably.
+
+
