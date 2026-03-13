@@ -28,7 +28,6 @@ library(plotly)
 # Import global population dataset from Our World in Data
 population <- read_csv('https://ourworldindata.org/grapher/population.csv?v=1&csvType=full&useColumnShortNames=true')
 
-# Clean and prepare dataset:
 # Rename columns for clarity
 # Filter only "World" data to analyze global trends
 # Restrict timeline to post-1800 to highlight modern acceleration
@@ -71,7 +70,7 @@ ggplotly(p1)
 ```
 
 
-## Act 2: We Don’t Just Multiply. We Consume More.
+## Act 2: We Don’t Just Multiply. <br> We Consume More.
 - More People. More Calories. More Pressure
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
@@ -148,8 +147,8 @@ library(forcats)
 
 agriland <- read_csv('https://ourworldindata.org/grapher/total-agricultural-area-over-the-long-term.csv?v=1&csvType=full&useColumnShortNames=true')
 
-# Select key regions + global aggregate
-countries <- c("World", "Asia", "Europe", "Africa", "North America")
+# Select key regions
+countries <- c("Asia", "Europe", "Africa", "North America", "South America")
 
 agri <- agriland %>% rename(country=entity,
                             agriculture_area=agriculture_c) %>%
@@ -176,7 +175,7 @@ ggplot(agri,
   theme_minimal()
 ```
 
-## Act 3: What We Gained in Farms, We Lost in Forests
+## Act 3: What We Gained in Farms, <br> We Lost in Forests
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 library(readr)
